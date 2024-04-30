@@ -34,43 +34,30 @@ def chatbot():
             # Read the response line by line and process each line as a separate JSON object
             response_lines = ollama_response.iter_lines()
             full_response_text = ""
-            json_buffer = ""
             for line in response_lines:
                 if line:  # filter out keep-alive new lines
-                    json_buffer += line.decode('utf-8')
-                    # Check if the buffer has a complete JSON object
-                    if json_buffer.strip().endswith('}'):
-                        try:
-                            response_data = json.loads(json_buffer)
-                            app.logger.debug(f"Ollama response data: {response_data}")
+                    # Decode each line as a separate JSON object
+                    response_data = json.loads(line.decode('utf-8'))
+                    app.logger.debug(f"Ollama response data: {response_data}")
 
-                            # Extract the 'response' field from the JSON data
-                            if 'response' in response_data:
-                                response_text = response_data['response']
-                                full_response_text += response_text
-                                app.logger.debug(f"Ollama response text: {response_text}")
+                    # Extract the 'response' field from the JSON data
+                    if 'response' in response_data:
+                        response_text = response_data['response']
+                        full_response_text += response_text
+                        app.logger.debug(f"Ollama response text: {response_text}")
 
-                                # Check if the response is complete
-                                if response_data.get('done', False):
-                                    # Return the full response in the expected format for the frontend
-                                    return jsonify({"response": full_response_text})
-                            # Clear the buffer after successfully decoding a JSON object
-                            json_buffer = ""
-                        except json.JSONDecodeError as e:
-                            # Log the error and the state of json_buffer
-                            app.logger.error(f"JSONDecodeError: {e}")
-                            app.logger.debug(f"Current json_buffer: {json_buffer}")
-                            # If JSON is incomplete, continue accumulating
-                            continue
-                        except Exception as e:
-                            # Handle any other errors that may occur during JSON parsing
-                            app.logger.error(f"Unexpected error: {e}")
-                            return jsonify({"error": "An unexpected error occurred while processing the response."}), 500
+                        # Check if the response is complete
+                        if response_data.get('done', False):
+                            # Return the full response in the expected format for the frontend
+                            return jsonify({"response": full_response_text})
 
             # If no 'response' field is present in any line, log an error and return an error message
-            app.logger.error("No 'response' field in any line of Ollama response")
-            return jsonify({"error": "No 'response' field in Ollama response JSON"}), 500
-
+            if not full_response_text:
+                app.logger.error("No 'response' field in any line of Ollama response")
+                return jsonify({"error": "No 'response' field in Ollama response JSON"}), 500
+        except json.JSONDecodeError as e:
+            app.logger.error(f"JSONDecodeError: {e}")
+            return jsonify({"error": "JSON decode error in Ollama response"}), 500
         except Exception as e:
             app.logger.error(f"Error processing Ollama response: {e}")
             # Handle any other errors
@@ -80,4 +67,4 @@ def chatbot():
         return jsonify({"error": "Error from Ollama service"}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.1", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
