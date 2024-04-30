@@ -77,6 +77,12 @@ def chatbot():
     else:
         app.logger.error(f"Non-200 status code received from Ollama service: {ollama_response.status_code}")
         app.logger.debug(f"Non-200 response content: {ollama_response.content}")
+        # Add detailed error logging for non-200 status code responses
+        try:
+            error_content = ollama_response.json()
+            app.logger.error(f"Ollama error response content: {error_content}")
+        except json.JSONDecodeError:
+            app.logger.error("Failed to decode Ollama error response as JSON")
         return jsonify({"error": "Error from Ollama service"}), ollama_response.status_code
 
 if __name__ == "__main__":
