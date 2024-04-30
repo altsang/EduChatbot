@@ -62,6 +62,10 @@ def chatbot():
                             app.logger.debug(f"Current json_buffer: {json_buffer}")
                             # If JSON is incomplete, continue accumulating
                             continue
+                        except Exception as e:
+                            # Handle any other errors that may occur during JSON parsing
+                            app.logger.error(f"Unexpected error: {e}")
+                            return jsonify({"error": "An unexpected error occurred while processing the response."}), 500
 
             # If no 'response' field is present in any line, log an error and return an error message
             app.logger.error("No 'response' field in any line of Ollama response")
