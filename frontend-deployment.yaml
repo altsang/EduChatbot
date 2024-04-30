@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: educhatbot-frontend
+  labels:
+    app: educhatbot-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: educhatbot-frontend
+  template:
+    metadata:
+      labels:
+        app: educhatbot-frontend
+    spec:
+      containers:
+      - name: educhatbot-frontend
+        image: altsang/educhatbot-frontend:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: REACT_APP_BACKEND_URL
+          value: "http://backend-service:5000" # This will be updated once the backend service is deployed and its URL is known
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: educhatbot-frontend-service
+spec:
+  selector:
+    app: educhatbot-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: LoadBalancer
