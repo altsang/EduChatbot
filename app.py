@@ -5,7 +5,8 @@ import logging
 import json
 
 app = Flask(__name__)
-CORS(app)
+# Set CORS to allow all origins
+CORS(app, resources={r"/chatbot": {"origins": "*"}})
 
 # Configure logging to display debug messages
 logging.basicConfig(level=logging.DEBUG)
@@ -19,11 +20,15 @@ def chatbot():
     app.logger.info(f"Received message: {message}")
 
     # Make a POST request to the Ollama service
-    ollama_response = requests.post(
-        "http://172.17.0.1:11434/api/generate",
-        json={"model": "mistral:latest", "prompt": message},
-        stream=True
-    )
+    try:
+        ollama_response = requests.post(
+            "http://172.17.0.1:11434/api/generate",
+            json={"model": "mistral:latest", "prompt": message},
+            stream=True
+        )
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"Request to Ollama service failed: {e}")
+        return jsonify({"error": "Request to Ollama service failed"}), 500
 
     # Log the status code and response from Ollama
     app.logger.info(f"Ollama response status: {ollama_response.status_code}")
@@ -63,8 +68,9 @@ def chatbot():
             # Handle any other errors
             return jsonify({"error": "The chatbot encountered an error processing your message. Please try again later."}), 500
     else:
-        app.logger.error("Error from Ollama service")
-        return jsonify({"error": "Error from Ollama service"}), 500
+        app.logger.error(f"Non-200 status code received from Ollama service: {ollama_response.status_code}")
+        app.logger.debug(f"Non-200 response content: {ollama_response.content}")
+        return jsonify({"error": "Error from Ollama service"}), ollama_response.status_code
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

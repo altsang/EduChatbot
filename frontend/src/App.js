@@ -27,7 +27,7 @@ function App() {
 
       // Send message to backend and process response
       try {
-        const response = await fetch('http://localhost:5000/chatbot', {
+        const response = await fetch(process.env.REACT_APP_BACKEND_URL + '/chatbot', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
