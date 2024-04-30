@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 import requests
 import logging
+import json
+from json.decoder import JSONDecodeError
 
 app = Flask(__name__)
 
@@ -26,7 +28,21 @@ def chatbot():
     app.logger.debug(f"Ollama response content: {ollama_response.content}")
 
     if ollama_response.status_code == 200:
-        response_json = ollama_response.json()
+        # Log the raw response content
+        app.logger.debug(f"Raw Ollama response content: {ollama_response.text}")
+
+        try:
+            # Check if the response is valid JSON
+            response_json = ollama_response.json()
+        except JSONDecodeError as e:
+            app.logger.error(f"JSONDecodeError: {e}")
+            # Handle invalid JSON response
+            # Log the entire response content for inspection
+            app.logger.error(f"Invalid JSON response content: {ollama_response.text}")
+
+            # Respond with a user-friendly error message
+            return jsonify({"error": "The chatbot encountered an error processing your message. Please try again later."}), 500
+
         # Extract the response text
         response_text = "".join([chunk['response'] for chunk in response_json if 'response' in chunk])
 
@@ -39,4 +55,4 @@ def chatbot():
         return jsonify({"error": "Error from Ollama service"}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.1", port=5000, debug=True)
