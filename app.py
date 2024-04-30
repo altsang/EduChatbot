@@ -1,49 +1,28 @@
 from flask import Flask, request, jsonify
-from langchain_community.llms import Ollama
-from langchain_community.vectorstores import Chroma
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
-from langchain_community.document_loaders import PDFPlumberLoader
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains import create_retrieval_chain
-from langchain.prompts import PromptTemplate
+import requests
 
 app = Flask(__name__)
 
-folder_path = "db"
-
-cached_llm = Ollama(model="mistral-7b")
-
-embedding = FastEmbedEmbeddings()
-
-text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=1024, chunk_overlap=80, length_function=len, is_separator_regex=False
-)
-
-raw_prompt = PromptTemplate.from_template(
-    """ 
-    <s>[INST] You are a technical assistant good at searching documents. If you do not have an answer from the provided information say so. [/INST] </s>
-    [INST] {input}
-           Context: {context}
-           Answer:
-    [/INST]
-"""
-)
-
 @app.route("/chatbot", methods=["POST"])
 def chatbot():
-    print("Post /chatbot called")
+    print("POST /chatbot called")
     json_content = request.json
-    query = json_content.get("message", "")
+    message = json_content.get("message", "")
 
-    print(f"query: {query}")
+    print(f"Message: {message}")
 
-    response = cached_llm.invoke(query)
+    # Make a POST request to the Ollama service
+    response = requests.post(
+        "http://localhost:11434/api/generate",
+        json={"model": "mistral", "prompt": message}
+    ).json()
 
-    print(response)
+    # Extract the response text
+    response_text = "".join([chunk['response'] for chunk in response if 'response' in chunk])
 
-    response_answer = {"answer": response}
-    return jsonify(response_answer)
+    print(f"Response: {response_text}")
+
+    return jsonify({"answer": response_text})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
