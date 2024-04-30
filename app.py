@@ -22,7 +22,7 @@ def chatbot():
     # Make a POST request to the Ollama service
     try:
         ollama_response = requests.post(
-            "http://host.docker.internal:11434/api/generate",
+            "http://172.17.0.1:11434/api/generate",
             json={"model": "mistral:latest", "prompt": message},
             stream=True
         )
@@ -33,6 +33,13 @@ def chatbot():
     # Log the status code and response from Ollama
     app.logger.info(f"Ollama response status: {ollama_response.status_code}")
     app.logger.debug(f"Ollama response headers: {ollama_response.headers}")
+
+    # Log the entire response body for debugging
+    try:
+        response_body = ollama_response.text
+        app.logger.debug(f"Ollama full response body: {response_body}")
+    except Exception as e:
+        app.logger.error(f"Error reading Ollama response body: {e}")
 
     if ollama_response.status_code == 200:
         try:
