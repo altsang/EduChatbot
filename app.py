@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
 import logging
+import json
 
 app = Flask(__name__)
 CORS(app)
@@ -34,19 +35,25 @@ def chatbot():
             response_text = ollama_response.text
             app.logger.debug(f"Ollama full response text: {response_text}")
 
-            # Split the response by new lines and parse each line as a separate JSON object
-            response_lines = response_text.strip().split('\n')
-            for line in response_lines:
-                app.logger.debug(f"Processing line: {line}")
-                response_object = json.loads(line)
-                if 'response' in response_object:
-                    response_text = response_object['response']
-                    app.logger.debug(f"Ollama response text: {response_text}")
-                    # Return the response in the expected format for the frontend
-                    return jsonify({"response": response_text})
+            # Attempt to parse the response as JSON
+            response_data = json.loads(response_text)
+            app.logger.debug(f"Ollama response data: {response_data}")
 
-            # If no valid 'response' found, return an error message
-            return jsonify({"error": "No valid response found in Ollama service output."}), 500
+            # Extract the 'response' field from the JSON data
+            if 'response' in response_data:
+                response_text = response_data['response']
+                app.logger.debug(f"Ollama response text: {response_text}")
+                # Return the response in the expected format for the frontend
+                return jsonify({"response": response_text})
+            else:
+                # If no 'response' field is present, log an error and return an error message
+                app.logger.error("No 'response' field in Ollama response JSON")
+                return jsonify({"error": "No 'response' field in Ollama response JSON"}), 500
+
+        except json.JSONDecodeError as e:
+            app.logger.error(f"JSONDecodeError: {e}")
+            # If a JSONDecodeError occurred, return an error message
+            return jsonify({"error": "The chatbot encountered an error processing your message. Please try again later."}), 500
         except Exception as e:
             app.logger.error(f"Error processing Ollama response: {e}")
             # Handle any other errors
