@@ -5,14 +5,22 @@ import logging
 import json
 
 app = Flask(__name__)
-# Set CORS to allow requests from the specific frontend ngrok URL
-CORS(app, resources={r"/chatbot": {"origins": "https://6e8df5a453d3.ngrok.app"}})
+# Set CORS to allow requests from any origin
+CORS(app)
 
 # Configure logging to display debug messages
 logging.basicConfig(level=logging.DEBUG)
 
 @app.route("/chatbot", methods=["POST"])
 def chatbot():
+    # Set CORS headers for the preflight request
+    if request.method == "OPTIONS":
+        response = app.make_response()
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response
+
     app.logger.info("POST /chatbot called")
     json_content = request.json
     message = json_content.get("message", "")
@@ -90,15 +98,17 @@ def chatbot():
         else:
             # Based on the response type, return the appropriate content
             if response_type == "text":
-                return jsonify({"response": full_response_text, "type": "text"})
+                response = jsonify({"response": full_response_text, "type": "text"})
             elif response_type == "image":
-                return jsonify({"response": image_url, "type": "image"})
+                response = jsonify({"response": image_url, "type": "image"})
             elif response_type == "video":
-                return jsonify({"response": video_url, "type": "video"})
+                response = jsonify({"response": video_url, "type": "video"})
             elif response_type == "audio":
-                return jsonify({"response": audio_url, "type": "audio"})
+                response = jsonify({"response": audio_url, "type": "audio"})
             elif response_type == "interactive":
-                return jsonify({"response": interactive_url, "type": "interactive"})
+                response = jsonify({"response": interactive_url, "type": "interactive"})
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
     except json.JSONDecodeError as e:
         app.logger.error(f"JSONDecodeError: {e}")
         return jsonify({"error": "JSON decode error in Ollama response"}), 500
