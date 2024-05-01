@@ -19,6 +19,17 @@ def chatbot():
 
     app.logger.info(f"Received message: {message}")
 
+    # Determine the type of response needed based on the message
+    response_type = "text"  # Default response type
+    if "picture" in message.lower():
+        response_type = "image"
+    elif "explain" in message.lower():
+        response_type = "video"
+    elif "listen" in message.lower():
+        response_type = "audio"
+    elif "play" in message.lower():
+        response_type = "interactive"
+
     # Make a POST request to the Ollama service
     try:
         ollama_response = requests.post(
@@ -33,13 +44,6 @@ def chatbot():
     # Log the status code and response from Ollama
     app.logger.info(f"Ollama response status: {ollama_response.status_code}")
     app.logger.debug(f"Ollama response headers: {ollama_response.headers}")
-
-    # Log the entire response body for debugging
-    try:
-        response_body = ollama_response.text
-        app.logger.debug(f"Ollama full response body: {response_body}")
-    except Exception as e:
-        app.logger.error(f"Error reading Ollama response body: {e}")
 
     if ollama_response.status_code == 200:
         try:
@@ -61,12 +65,29 @@ def chatbot():
                         # Check if the response is complete
                         if response_data.get('done', False):
                             # Return the full response in the expected format for the frontend
-                            return jsonify({"response": full_response_text})
+                            app.logger.debug(f"Full Ollama response text: {full_response_text}")
+                            break
 
             # If no 'response' field is present in any line, log an error and return an error message
             if not full_response_text:
                 app.logger.error("No 'response' field in any line of Ollama response")
                 return jsonify({"error": "No 'response' field in Ollama response JSON"}), 500
+            else:
+                # Based on the response type, return the appropriate content
+                if response_type == "text":
+                    return jsonify({"response": full_response_text, "type": "text"})
+                elif response_type == "image":
+                    # For demonstration, return a placeholder image URL
+                    return jsonify({"response": "https://via.placeholder.com/150", "type": "image"})
+                elif response_type == "video":
+                    # For demonstration, return a placeholder video URL
+                    return jsonify({"response": "https://www.example.com/placeholder-video.mp4", "type": "video"})
+                elif response_type == "audio":
+                    # For demonstration, return a placeholder audio URL
+                    return jsonify({"response": "https://www.example.com/placeholder-audio.mp3", "type": "audio"})
+                elif response_type == "interactive":
+                    # For demonstration, return a placeholder interactive URL
+                    return jsonify({"response": "https://www.example.com/placeholder-interactive", "type": "interactive"})
         except json.JSONDecodeError as e:
             app.logger.error(f"JSONDecodeError: {e}")
             return jsonify({"error": "JSON decode error in Ollama response"}), 500
