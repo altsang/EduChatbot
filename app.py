@@ -21,20 +21,24 @@ def chatbot():
 
     # Determine the type of response needed based on the message
     response_type = "text"  # Default response type
+    child_friendly = "explain like I'm 10" if "for kids" in message.lower() else ""
     if "picture" in message.lower():
         response_type = "image"
-    elif "explain" in message.lower():
+    elif "explain" in message.lower() or "what is" in message.lower():
         response_type = "video"
     elif "listen" in message.lower():
         response_type = "audio"
     elif "play" in message.lower():
         response_type = "interactive"
 
+    # Construct the prompt for the Ollama service
+    prompt = f"{child_friendly} {message}"
+
     # Make a POST request to the Ollama service
     try:
         ollama_response = requests.post(
             "http://172.17.0.1:11434/api/generate",
-            json={"model": "mistral:latest", "prompt": message},
+            json={"model": "mistral:latest", "prompt": prompt},
             stream=True
         )
     except requests.exceptions.RequestException as e:
