@@ -75,6 +75,8 @@ function App() {
                  <source src={chat.message} type="video/mp4" />
                  Your browser does not support the video tag.
                </video>;
+      case 'interactive':
+        return <iframe src={chat.message} width="100%" height="500px" title="Interactive content"></iframe>;
       // Add cases for other types as needed
       default:
         return <Text color="red.500">Unsupported content type</Text>;
