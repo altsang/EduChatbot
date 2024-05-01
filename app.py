@@ -43,7 +43,7 @@ def chatbot():
     # Make a POST request to the Ollama service
     try:
         ollama_response = requests.post(
-            "http://localhost:11434/api/generate",
+            "http://host.docker.internal:11434/api/generate",
             json={"model": "mistral:latest", "prompt": prompt},
             stream=True
         )
