@@ -5,8 +5,8 @@ import logging
 import json
 
 app = Flask(__name__)
-# Set CORS to allow requests from any origin
-CORS(app)
+# Set CORS to allow requests from the specific frontend origin
+CORS(app, resources={r"/chatbot": {"origins": "http://localhost:3000"}})
 
 # Configure logging to display debug messages
 logging.basicConfig(level=logging.DEBUG)
