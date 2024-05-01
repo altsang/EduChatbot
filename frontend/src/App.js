@@ -27,7 +27,7 @@ function App() {
 
       // Send message to backend and process response
       try {
-        const response = await fetch('http://localhost:5000/chatbot', {
+        const response = await fetch(process.env.REACT_APP_BACKEND_URL + '/chatbot', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -36,7 +36,9 @@ function App() {
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          // Attempt to read the response body even if the status is not OK
+          const errorBody = await response.text();
+          throw new Error(`HTTP error! status: ${response.status}, body: ${errorBody}`);
         }
 
         const data = await response.json();
@@ -46,7 +48,8 @@ function App() {
         setChatHistory((prevChatHistory) => [...prevChatHistory, botResponse]);
       } catch (error) {
         console.error('Error sending message to chatbot:', error);
-        setChatHistory((prevChatHistory) => [...prevChatHistory, { sender: 'bot', message: 'Sorry, I encountered an error. Please try again later.', type: 'text' }]);
+        // Include the error details in the chat history for debugging
+        setChatHistory((prevChatHistory) => [...prevChatHistory, { sender: 'bot', message: `Sorry, I encountered an error. Please try again later. Details: ${error.message}`, type: 'text' }]);
       }
 
       // Reset input field
