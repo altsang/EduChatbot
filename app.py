@@ -31,6 +31,12 @@ def chatbot():
     elif "play" in message.lower():
         response_type = "interactive"
 
+    # URLs for educational content
+    image_url = "https://scratch.mit.edu/projects/10128407/"  # An example Scratch project image
+    video_url = "https://www.youtube.com/watch?v=khXVGYi6gqE"  # A YouTube video explaining programming basics
+    audio_url = "https://placeholder-audio-for-educhatbot.com/audio.mp3"  # Placeholder for text-to-speech audio explaining a programming concept
+    interactive_url = "https://scratch.mit.edu/projects/10128407/"  # An example Scratch project for interactive coding
+
     # Construct the prompt for the Ollama service
     prompt = f"{child_friendly} {message}"
 
@@ -81,17 +87,13 @@ def chatbot():
                 if response_type == "text":
                     return jsonify({"response": full_response_text, "type": "text"})
                 elif response_type == "image":
-                    # For demonstration, return a placeholder image URL
-                    return jsonify({"response": "https://via.placeholder.com/150", "type": "image"})
+                    return jsonify({"response": image_url, "type": "image"})
                 elif response_type == "video":
-                    # For demonstration, return a placeholder video URL
-                    return jsonify({"response": "https://www.example.com/placeholder-video.mp4", "type": "video"})
+                    return jsonify({"response": video_url, "type": "video"})
                 elif response_type == "audio":
-                    # For demonstration, return a placeholder audio URL
-                    return jsonify({"response": "https://www.example.com/placeholder-audio.mp3", "type": "audio"})
+                    return jsonify({"response": audio_url, "type": "audio"})
                 elif response_type == "interactive":
-                    # For demonstration, return a placeholder interactive URL
-                    return jsonify({"response": "https://www.example.com/placeholder-interactive", "type": "interactive"})
+                    return jsonify({"response": interactive_url, "type": "interactive"})
         except json.JSONDecodeError as e:
             app.logger.error(f"JSONDecodeError: {e}")
             return jsonify({"error": "JSON decode error in Ollama response"}), 500
