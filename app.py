@@ -107,15 +107,18 @@ def chatbot():
                 response = jsonify({"response": audio_url, "type": "audio"})
             elif response_type == "interactive":
                 response = jsonify({"response": interactive_url, "type": "interactive"})
-            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers.add('Access-Control-Allow-Origin', '*')
             return response
     except json.JSONDecodeError as e:
         app.logger.error(f"JSONDecodeError: {e}")
-        return jsonify({"error": "JSON decode error in Ollama response"}), 500
+        response = jsonify({"error": "JSON decode error in Ollama response"})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 500
     except Exception as e:
         app.logger.error(f"Error processing Ollama response: {e}")
-        # Handle any other errors
-        return jsonify({"error": "The chatbot encountered an error processing your message. Please try again later."}), 500
+        response = jsonify({"error": "The chatbot encountered an error processing your message. Please try again later."})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
