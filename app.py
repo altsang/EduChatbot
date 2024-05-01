@@ -5,8 +5,8 @@ import logging
 import json
 
 app = Flask(__name__)
-# Set CORS to allow all origins
-CORS(app, resources={r"/chatbot": {"origins": "*"}})
+# Set CORS to allow all origins for all routes
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Configure logging to display debug messages
 logging.basicConfig(level=logging.DEBUG)
@@ -43,7 +43,7 @@ def chatbot():
     # Make a POST request to the Ollama service
     try:
         ollama_response = requests.post(
-            "http://172.17.0.1:11434/api/generate",
+            "http://host.docker.internal:11434/api/generate",
             json={"model": "mistral:latest", "prompt": prompt},
             stream=True
         )
