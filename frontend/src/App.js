@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ChakraProvider,
   Box,
@@ -12,45 +12,37 @@ import {
   Image,
   Code,
 } from '@chakra-ui/react';
+import io from 'socket.io-client';
 
 function App() {
   const [inputValue, setInputValue] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    // Connect to WebSocket server
+    const newSocket = io(process.env.REACT_APP_BACKEND_URL);
+    setSocket(newSocket);
+
+    // Listen for messages from the server
+    newSocket.on('message', (message) => {
+      console.log('Received message from WebSocket:', message); // Added console log to track incoming messages
+      setChatHistory((prevChatHistory) => [...prevChatHistory, message]);
+    });
+
+    return () => newSocket.close();
+  }, [setSocket]);
 
   const handleInputChange = (e) => setInputValue(e.target.value);
 
-  const handleSendClick = async () => {
+  const handleSendClick = () => {
     if (inputValue.trim() !== '') {
       // Add user message to chat history
       const newUserMessage = { sender: 'user', message: inputValue, type: 'text' };
       setChatHistory([...chatHistory, newUserMessage]);
 
-      // Send message to backend and process response
-      try {
-        const response = await fetch(process.env.REACT_APP_BACKEND_URL + '/chatbot', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ message: inputValue }),
-        });
-
-        if (!response.ok) {
-          // Attempt to read the response body even if the status is not OK
-          const errorBody = await response.text();
-          throw new Error(`HTTP error! status: ${response.status}, body: ${errorBody}`);
-        }
-
-        const data = await response.json();
-        // Determine the type of response
-        const responseType = data.type || 'text';
-        const botResponse = { sender: 'bot', message: data.response, type: responseType };
-        setChatHistory((prevChatHistory) => [...prevChatHistory, botResponse]);
-      } catch (error) {
-        console.error('Error sending message to chatbot:', error);
-        // Include the error details in the chat history for debugging
-        setChatHistory((prevChatHistory) => [...prevChatHistory, { sender: 'bot', message: `Sorry, I encountered an error. Please try again later. Details: ${error.message}`, type: 'text' }]);
-      }
+      // Send message to WebSocket server
+      socket.emit('message', { message: inputValue });
 
       // Reset input field
       setInputValue('');
