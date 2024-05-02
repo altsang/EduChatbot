@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ChakraProvider,
   Box,
@@ -12,45 +12,42 @@ import {
   Image,
   Code,
 } from '@chakra-ui/react';
+import io from 'socket.io-client';
 
 function App() {
   const [inputValue, setInputValue] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    // Connect to WebSocket server
+    const newSocket = io(process.env.REACT_APP_BACKEND_URL);
+    setSocket(newSocket);
+
+    // Listen for messages from the server
+    newSocket.on('message', (message) => {
+      console.log('Received message from WebSocket:', message); // Added console log to track incoming messages
+      setChatHistory((prevChatHistory) => {
+        const updatedChatHistory = [...prevChatHistory, message];
+        console.log('Updated chat history:', updatedChatHistory); // Added console log to track chat history updates
+        return updatedChatHistory;
+      });
+    });
+
+    // Log the WebSocket connection status
+    newSocket.on('connect', () => {
+      console.log('WebSocket connected:', newSocket.connected);
+    });
+
+    return () => newSocket.close();
+  }, [setSocket]);
 
   const handleInputChange = (e) => setInputValue(e.target.value);
 
-  const handleSendClick = async () => {
+  const handleSendClick = () => {
     if (inputValue.trim() !== '') {
-      // Add user message to chat history
-      const newUserMessage = { sender: 'user', message: inputValue, type: 'text' };
-      setChatHistory([...chatHistory, newUserMessage]);
-
-      // Send message to backend and process response
-      try {
-        const response = await fetch(process.env.REACT_APP_BACKEND_URL + '/chatbot', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ message: inputValue }),
-        });
-
-        if (!response.ok) {
-          // Attempt to read the response body even if the status is not OK
-          const errorBody = await response.text();
-          throw new Error(`HTTP error! status: ${response.status}, body: ${errorBody}`);
-        }
-
-        const data = await response.json();
-        // Determine the type of response
-        const responseType = data.type || 'text';
-        const botResponse = { sender: 'bot', message: data.response, type: responseType };
-        setChatHistory((prevChatHistory) => [...prevChatHistory, botResponse]);
-      } catch (error) {
-        console.error('Error sending message to chatbot:', error);
-        // Include the error details in the chat history for debugging
-        setChatHistory((prevChatHistory) => [...prevChatHistory, { sender: 'bot', message: `Sorry, I encountered an error. Please try again later. Details: ${error.message}`, type: 'text' }]);
-      }
+      // Send message to WebSocket server
+      socket.emit('message', { message: inputValue });
 
       // Reset input field
       setInputValue('');
@@ -58,25 +55,47 @@ function App() {
   };
 
   const renderChatMessage = (chat) => {
+    console.log('Rendering chat message:', chat); // Added console log to track rendering of chat messages
     switch (chat.type) {
       case 'text':
-        return <Text color={chat.sender === 'user' ? 'blue.500' : 'green.500'}>{chat.message}</Text>;
+        return <Text color={chat.sender === 'user' ? 'blue.500' : 'green.500'}>{chat.response}</Text>;
       case 'image':
-        return <Image src={chat.message} alt="Chatbot image" />;
+        return <Image src={chat.response} alt="Chatbot image" />;
       case 'code':
-        return <Code children={chat.message} />;
+        return <Code children={chat.response} />;
       case 'diagram':
         // Placeholder for diagram rendering
-        return <Image src={chat.message} alt="Chatbot diagram" />;
+        return <Image src={chat.response} alt="Chatbot diagram" />;
       case 'audio':
-        return <audio controls src={chat.message} />;
+        return <audio controls src={chat.response} />;
       case 'video':
-        return <video controls width="250">
-                 <source src={chat.message} type="video/mp4" />
-                 Your browser does not support the video tag.
-               </video>;
+        // Check if the video URL is from YouTube
+        if (chat.response.includes("youtube.com")) {
+          // Extract the video ID from the URL
+          const videoId = chat.response.split('v=')[1];
+          const embedUrl = `https://www.youtube.com/embed/${videoId}`;
+          return (
+            <iframe
+              width="560"
+              height="315"
+              src={embedUrl}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title="Video content"
+            ></iframe>
+          );
+        } else {
+          // For non-YouTube videos, use the video tag
+          return (
+            <video controls width="250">
+              <source src={chat.response} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          );
+        }
       case 'interactive':
-        return <iframe src={chat.message} width="100%" height="500px" title="Interactive content"></iframe>;
+        return <iframe src={chat.response} width="100%" height="500px" title="Interactive content"></iframe>;
       // Add cases for other types as needed
       default:
         return <Text color="red.500">Unsupported content type</Text>;
@@ -90,11 +109,14 @@ function App() {
           <VStack spacing={8}>
             <Text>Welcome to EduChatbot!</Text>
             <Box w="100%" p={4} borderWidth="1px" borderRadius="lg" overflowY="auto" maxHeight="300px">
-              {chatHistory.map((chat, index) => (
-                <Box key={index} alignSelf={chat.sender === 'user' ? 'flex-end' : 'flex-start'}>
-                  {renderChatMessage(chat)}
-                </Box>
-              ))}
+              {chatHistory.map((chat, index) => {
+                console.log('Mapping chat message:', chat); // Added console log to track mapping of chat messages
+                return (
+                  <Box key={index} alignSelf={chat.sender === 'user' ? 'flex-end' : 'flex-start'}>
+                    {renderChatMessage(chat)}
+                  </Box>
+                );
+              })}
             </Box>
             <HStack>
               <Input
