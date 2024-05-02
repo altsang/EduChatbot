@@ -69,10 +69,31 @@ function App() {
       case 'audio':
         return <audio controls src={chat.response} />;
       case 'video':
-        return <video controls width="250">
-                 <source src={chat.response} type="video/mp4" />
-                 Your browser does not support the video tag.
-               </video>;
+        // Check if the video URL is from YouTube
+        if (chat.response.includes("youtube.com")) {
+          // Extract the video ID from the URL
+          const videoId = chat.response.split('v=')[1];
+          const embedUrl = `https://www.youtube.com/embed/${videoId}`;
+          return (
+            <iframe
+              width="560"
+              height="315"
+              src={embedUrl}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title="Video content"
+            ></iframe>
+          );
+        } else {
+          // For non-YouTube videos, use the video tag
+          return (
+            <video controls width="250">
+              <source src={chat.response} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          );
+        }
       case 'interactive':
         return <iframe src={chat.response} width="100%" height="500px" title="Interactive content"></iframe>;
       // Add cases for other types as needed
