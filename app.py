@@ -12,12 +12,12 @@ cors = CORS(app, resources={r"/*": {"origins": "*"}})
 # Configure logging to display info messages and output them to a file
 logging.basicConfig(level=logging.INFO, handlers=[logging.FileHandler('app.log', 'a')])
 
-# Configure SocketIO with explicit CORS policy to match Flask-CORS
-socketio = SocketIO(app, cors_allowed_origins="*")
+# Configure SocketIO with CORS headers explicitly set for all routes
+socketio = SocketIO(app, cors_allowed_origins="*", cors_credentials=True, logger=True, engineio_logger=True, manage_session=False)
 
 # URLs for educational content
 image_url = "https://scratch.mit.edu/projects/10128407/"  # An example Scratch project image
-video_url = "https://www.youtube.com/watch?v=khXVGYi6gqE"  # A YouTube video explaining programming basics
+video_url = "https://www.youtube.com/watch?v=_j4Lj-BT00g"  # A YouTube video explaining programming basics for kids
 audio_url = "https://placeholder-audio-for-educhatbot.com/audio.mp3"  # Placeholder for text-to-speech audio explaining a programming concept
 interactive_url = "https://scratch.mit.edu/projects/10128407/"  # An example Scratch project for interactive coding
 
@@ -130,8 +130,6 @@ def handle_message(data):
             print(f"Emitting message to frontend: type={response_type}, response={content_url}")
             socketio.emit('message', {"response": image_url, "type": "image"})
         elif response_type == "video":
-            # Global declaration of the video_url variable
-            global video_url
             # Ensure the global video_url is used
             if video_url is None:
                 app.logger.error("video_url is not defined")
@@ -158,6 +156,7 @@ def after_request_func(response):
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Methods', 'GET,POST')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    app.logger.info(f"Headers set: {response.headers}")
     return response
 
 @app.route("/chatbot", methods=["POST"])
