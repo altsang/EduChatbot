@@ -124,19 +124,26 @@ def handle_message(data):
 
         # Based on the response type, emit the appropriate content
         if response_type == "text":
+            print(f"Emitting message to frontend: type={response_type}, response={full_response_text}")
             socketio.emit('message', {"response": full_response_text, "type": "text"})
         elif response_type == "image":
+            print(f"Emitting message to frontend: type={response_type}, response={content_url}")
             socketio.emit('message', {"response": image_url, "type": "image"})
         elif response_type == "video":
-            # Check if video_url is defined
+            # Global declaration of the video_url variable
+            global video_url
+            # Ensure the global video_url is used
             if video_url is None:
                 app.logger.error("video_url is not defined")
                 socketio.emit('message', {"error": "Video URL is not defined"})
                 return
+            print(f"Emitting message to frontend: type={response_type}, response={video_url}")
             socketio.emit('message', {"response": video_url, "type": "video"})
         elif response_type == "audio":
+            print(f"Emitting message to frontend: type={response_type}, response={content_url}")
             socketio.emit('message', {"response": audio_url, "type": "audio"})
         elif response_type == "interactive":
+            print(f"Emitting message to frontend: type={response_type}, response={content_url}")
             socketio.emit('message', {"response": interactive_url, "type": "interactive"})
     except json.JSONDecodeError as e:
         app.logger.error(f"JSONDecodeError: {e}")
