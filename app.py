@@ -7,27 +7,117 @@ import json
 
 app = Flask(__name__)
 # Set CORS to allow requests from any origin
-CORS(app)
+cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Configure logging to display debug messages
 logging.basicConfig(level=logging.DEBUG)
 
-socketio = SocketIO(app, cors_allowed_origins="*")
+# Configure SocketIO with explicit CORS policy for the frontend
+socketio = SocketIO(app, cors_allowed_origins="*", cors_credentials=True, cors_headers="Content-Type")
 
 @socketio.on('message')
 def handle_message(data):
-    print('received message: ' + data)
-    socketio.emit('message', data)
+    if not isinstance(data, dict):
+        app.logger.error("Received data is not a dictionary")
+        return
+
+    app.logger.info(f"Received message: {data}")
+    message = data.get("message", "")
+
+    app.logger.info(f"Received message: {message}")
+
+    # Determine the type of response needed based on the message
+    response_type = "text"  # Default response type
+    child_friendly = "explain like I'm 10" if "for kids" in message.lower() else ""
+    if "picture" in message.lower():
+        response_type = "image"
+    elif "explain" in message.lower() or "what is" in message.lower():
+        response_type = "video"
+    elif "listen" in message.lower():
+        response_type = "audio"
+    elif "play" in message.lower():
+        response_type = "interactive"
+
+    # Construct the prompt for the Ollama service
+    prompt = f"{child_friendly} {message}"
+
+    # Make a POST request to the Ollama service
+    try:
+        ollama_response = requests.post(
+            "http://172.17.0.1:11434/api/generate",
+            json={"model": "mistral:latest", "prompt": prompt},
+            stream=True
+        )
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"Request to Ollama service failed: {e}")
+        socketio.emit('message', {"error": "Request to Ollama service failed"})
+        return
+
+    # Check if the request was successful
+    if ollama_response.status_code != 200:
+        app.logger.error(f"Non-200 status code received from Ollama service: {ollama_response.status_code}")
+        socketio.emit('message', {"error": "Error from Ollama service"})
+        return
+
+    # Process the successful response from Ollama
+    # Log the status code and response from Ollama
+    app.logger.info(f"Ollama response status: {ollama_response.status_code}")
+    app.logger.debug(f"Ollama response headers: {ollama_response.headers}")
+
+    try:
+        # Read the response line by line and process each line as a separate JSON object
+        response_lines = ollama_response.iter_lines()
+        full_response_text = ""
+        done = False
+        for line in response_lines:
+            if line:  # filter out keep-alive new lines
+                # Decode each line as a separate JSON object
+                response_data = json.loads(line.decode('utf-8'))
+                app.logger.debug(f"Ollama response data: {response_data}")
+
+                # Extract the 'response' field from the JSON data
+                if 'response' in response_data:
+                    response_text = response_data['response']
+                    full_response_text += response_text
+                    app.logger.debug(f"Ollama response text: {response_text}")
+
+                    # Check if the response is complete
+                    if response_data.get('done', False):
+                        done = True
+                        break
+
+        # If no 'response' field is present in any line, log an error and return an error message
+        if not full_response_text:
+            app.logger.error("No 'response' field in any line of Ollama response")
+            socketio.emit('message', {"error": "No 'response' field in Ollama response JSON"})
+            return
+
+        # If the response is not marked as done, log an error and return an error message
+        if not done:
+            app.logger.error("Ollama response not marked as done")
+            socketio.emit('message', {"error": "Incomplete response from Ollama"})
+            return
+
+        # Based on the response type, emit the appropriate content
+        if response_type == "text":
+            socketio.emit('message', {"response": full_response_text, "type": "text"})
+        elif response_type == "image":
+            socketio.emit('message', {"response": image_url, "type": "image"})
+        elif response_type == "video":
+            socketio.emit('message', {"response": video_url, "type": "video"})
+        elif response_type == "audio":
+            socketio.emit('message', {"response": audio_url, "type": "audio"})
+        elif response_type == "interactive":
+            socketio.emit('message', {"response": interactive_url, "type": "interactive"})
+    except json.JSONDecodeError as e:
+        app.logger.error(f"JSONDecodeError: {e}")
+        socketio.emit('message', {"error": "JSON decode error in Ollama response"})
+    except Exception as e:
+        app.logger.error(f"Error processing Ollama response: {e}")
+        socketio.emit('message', {"error": "The chatbot encountered an error processing your message. Please try again later."})
 
 @app.route("/chatbot", methods=["POST"])
 def chatbot():
-    # Set CORS headers for the preflight request
-    if request.method == "OPTIONS":
-        response = app.make_response()
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Methods'] = 'POST'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-        return response
     app.logger.info("POST /chatbot called")
     json_content = request.json
     message = json_content.get("message", "")
@@ -119,17 +209,14 @@ def chatbot():
             response = jsonify({"response": audio_url, "type": "audio"})
         elif response_type == "interactive":
             response = jsonify({"response": interactive_url, "type": "interactive"})
-        response.headers.add('Access-Control-Allow-Origin', '*')
         return response
     except json.JSONDecodeError as e:
         app.logger.error(f"JSONDecodeError: {e}")
         response = jsonify({"error": "JSON decode error in Ollama response"})
-        response.headers.add('Access-Control-Allow-Origin', '*')
         return response, 500
     except Exception as e:
         app.logger.error(f"Error processing Ollama response: {e}")
         response = jsonify({"error": "The chatbot encountered an error processing your message. Please try again later."})
-        response.headers.add('Access-Control-Allow-Origin', '*')
         return response, 500
 
 if __name__ == "__main__":
