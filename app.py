@@ -124,9 +124,13 @@ def handle_message(data):
 
         # Based on the response type, emit the appropriate content
         if response_type == "text":
+            app.logger.info(f"Attempting to emit text response to client")
             socketio.emit('message', {"response": full_response_text, "type": "text"})
+            app.logger.info(f"Emitted text response to client: {full_response_text}")
         elif response_type == "image":
+            app.logger.info(f"Attempting to emit image response to client")
             socketio.emit('message', {"response": image_url, "type": "image"})
+            app.logger.info(f"Emitted image response to client: {image_url}")
         elif response_type == "video":
             # Ensure the global video_url is used
             global video_url
@@ -134,11 +138,17 @@ def handle_message(data):
                 app.logger.error("video_url is not defined")
                 socketio.emit('message', {"error": "Video URL is not defined"})
                 return
+            app.logger.info(f"Attempting to emit video response to client")
             socketio.emit('message', {"response": video_url, "type": "video"})
+            app.logger.info(f"Emitted video response to client: {video_url}")
         elif response_type == "audio":
+            app.logger.info(f"Attempting to emit audio response to client")
             socketio.emit('message', {"response": audio_url, "type": "audio"})
+            app.logger.info(f"Emitted audio response to client: {audio_url}")
         elif response_type == "interactive":
+            app.logger.info(f"Attempting to emit interactive response to client")
             socketio.emit('message', {"response": interactive_url, "type": "interactive"})
+            app.logger.info(f"Emitted interactive response to client: {interactive_url}")
     except json.JSONDecodeError as e:
         app.logger.error(f"JSONDecodeError: {e}")
         socketio.emit('message', {"error": "JSON decode error in Ollama response"})
