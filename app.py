@@ -18,7 +18,7 @@ socketio = SocketIO(app, cors_allowed_origins="*", cors_credentials=True, logger
 # URLs for educational content
 image_url = "https://scratch.mit.edu/projects/10128407/"  # An example Scratch project image
 video_url = "https://www.youtube.com/watch?v=_j4Lj-BT00g"  # A YouTube video explaining programming basics for kids
-audio_url = "https://placeholder-audio-for-educhatbot.com/audio.mp3"  # Placeholder for text-to-speech audio explaining a programming concept
+audio_url = "/home/ubuntu/EduChatbot/placeholder_audio.mp3"  # Local placeholder audio file for chatbot audio response demonstration
 interactive_url = "https://scratch.mit.edu/projects/10128407/"  # An example Scratch project for interactive coding
 
 @socketio.on('message')
