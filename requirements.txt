@@ -2,3 +2,5 @@ Flask
 Flask-Cors
 requests
 gunicorn
+flask_socketio
+eventlet

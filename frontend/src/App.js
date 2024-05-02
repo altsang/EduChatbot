@@ -27,7 +27,16 @@ function App() {
     // Listen for messages from the server
     newSocket.on('message', (message) => {
       console.log('Received message from WebSocket:', message); // Added console log to track incoming messages
-      setChatHistory((prevChatHistory) => [...prevChatHistory, message]);
+      setChatHistory((prevChatHistory) => {
+        const updatedChatHistory = [...prevChatHistory, message];
+        console.log('Updated chat history:', updatedChatHistory); // Added console log to track chat history updates
+        return updatedChatHistory;
+      });
+    });
+
+    // Log the WebSocket connection status
+    newSocket.on('connect', () => {
+      console.log('WebSocket connected:', newSocket.connected);
     });
 
     return () => newSocket.close();
@@ -37,10 +46,6 @@ function App() {
 
   const handleSendClick = () => {
     if (inputValue.trim() !== '') {
-      // Add user message to chat history
-      const newUserMessage = { sender: 'user', message: inputValue, type: 'text' };
-      setChatHistory([...chatHistory, newUserMessage]);
-
       // Send message to WebSocket server
       socket.emit('message', { message: inputValue });
 
@@ -50,6 +55,7 @@ function App() {
   };
 
   const renderChatMessage = (chat) => {
+    console.log('Rendering chat message:', chat); // Added console log to track rendering of chat messages
     switch (chat.type) {
       case 'text':
         return <Text color={chat.sender === 'user' ? 'blue.500' : 'green.500'}>{chat.message}</Text>;
@@ -82,11 +88,14 @@ function App() {
           <VStack spacing={8}>
             <Text>Welcome to EduChatbot!</Text>
             <Box w="100%" p={4} borderWidth="1px" borderRadius="lg" overflowY="auto" maxHeight="300px">
-              {chatHistory.map((chat, index) => (
-                <Box key={index} alignSelf={chat.sender === 'user' ? 'flex-end' : 'flex-start'}>
-                  {renderChatMessage(chat)}
-                </Box>
-              ))}
+              {chatHistory.map((chat, index) => {
+                console.log('Mapping chat message:', chat); // Added console log to track mapping of chat messages
+                return (
+                  <Box key={index} alignSelf={chat.sender === 'user' ? 'flex-end' : 'flex-start'}>
+                    {renderChatMessage(chat)}
+                  </Box>
+                );
+              })}
             </Box>
             <HStack>
               <Input

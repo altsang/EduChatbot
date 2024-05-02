@@ -9,14 +9,23 @@ app = Flask(__name__)
 # Set CORS to allow requests from any origin
 cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
-# Configure logging to display debug messages
-logging.basicConfig(level=logging.DEBUG)
+# Configure logging to display info messages and output them to a file
+logging.basicConfig(level=logging.INFO, handlers=[logging.FileHandler('app.log', 'a')])
 
-# Configure SocketIO with explicit CORS policy for the frontend
-socketio = SocketIO(app, cors_allowed_origins="*", cors_credentials=True, cors_headers="Content-Type")
+# Configure SocketIO with explicit CORS policy to match Flask-CORS
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+# URLs for educational content
+image_url = "https://scratch.mit.edu/projects/10128407/"  # An example Scratch project image
+video_url = "https://www.youtube.com/watch?v=khXVGYi6gqE"  # A YouTube video explaining programming basics
+audio_url = "https://placeholder-audio-for-educhatbot.com/audio.mp3"  # Placeholder for text-to-speech audio explaining a programming concept
+interactive_url = "https://scratch.mit.edu/projects/10128407/"  # An example Scratch project for interactive coding
 
 @socketio.on('message')
 def handle_message(data):
+    global video_url, image_url, audio_url, interactive_url
+    app.logger.info(f"Received data: {data}")
+
     if not isinstance(data, dict):
         app.logger.error("Received data is not a dictionary")
         return
@@ -28,15 +37,25 @@ def handle_message(data):
 
     # Determine the type of response needed based on the message
     response_type = "text"  # Default response type
+    content_url = None  # Initialize content URL to None
     child_friendly = "explain like I'm 10" if "for kids" in message.lower() else ""
     if "picture" in message.lower():
         response_type = "image"
+        content_url = image_url
     elif "explain" in message.lower() or "what is" in message.lower():
         response_type = "video"
+        content_url = video_url
     elif "listen" in message.lower():
         response_type = "audio"
+        content_url = audio_url
     elif "play" in message.lower():
         response_type = "interactive"
+        content_url = interactive_url
+
+    app.logger.info(f"Response type determined: {response_type}")
+
+    # Log the current value of content_url
+    app.logger.info(f"Current value of content_url: {content_url}")
 
     # Construct the prompt for the Ollama service
     prompt = f"{child_friendly} {message}"
@@ -52,6 +71,9 @@ def handle_message(data):
         app.logger.error(f"Request to Ollama service failed: {e}")
         socketio.emit('message', {"error": "Request to Ollama service failed"})
         return
+    except Exception as e:
+        app.logger.error(f"Unexpected error when making request to Ollama service: {e}")
+        socketio.emit('message', {"error": "Unexpected error when making request to Ollama service"})
 
     # Check if the request was successful
     if ollama_response.status_code != 200:
@@ -74,6 +96,8 @@ def handle_message(data):
                 # Decode each line as a separate JSON object
                 response_data = json.loads(line.decode('utf-8'))
                 app.logger.debug(f"Ollama response data: {response_data}")
+
+                app.logger.info(f"Ollama response data received: {response_data}")
 
                 # Extract the 'response' field from the JSON data
                 if 'response' in response_data:
@@ -104,6 +128,11 @@ def handle_message(data):
         elif response_type == "image":
             socketio.emit('message', {"response": image_url, "type": "image"})
         elif response_type == "video":
+            # Check if video_url is defined
+            if video_url is None:
+                app.logger.error("video_url is not defined")
+                socketio.emit('message', {"error": "Video URL is not defined"})
+                return
             socketio.emit('message', {"response": video_url, "type": "video"})
         elif response_type == "audio":
             socketio.emit('message', {"response": audio_url, "type": "audio"})
@@ -115,6 +144,14 @@ def handle_message(data):
     except Exception as e:
         app.logger.error(f"Error processing Ollama response: {e}")
         socketio.emit('message', {"error": "The chatbot encountered an error processing your message. Please try again later."})
+
+# Log the response headers for debugging CORS issues
+@app.after_request
+def after_request_func(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,POST')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    return response
 
 @app.route("/chatbot", methods=["POST"])
 def chatbot():
@@ -135,12 +172,6 @@ def chatbot():
         response_type = "audio"
     elif "play" in message.lower():
         response_type = "interactive"
-
-    # URLs for educational content
-    image_url = "https://scratch.mit.edu/projects/10128407/"  # An example Scratch project image
-    video_url = "https://www.youtube.com/watch?v=khXVGYi6gqE"  # A YouTube video explaining programming basics
-    audio_url = "https://placeholder-audio-for-educhatbot.com/audio.mp3"  # Placeholder for text-to-speech audio explaining a programming concept
-    interactive_url = "https://scratch.mit.edu/projects/10128407/"  # An example Scratch project for interactive coding
 
     # Construct the prompt for the Ollama service
     prompt = f"{child_friendly} {message}"

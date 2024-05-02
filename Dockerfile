@@ -8,7 +8,8 @@ WORKDIR /usr/src/app
 COPY . .
 
 # Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Also install gunicorn and eventlet for WebSocket support
+RUN pip install --no-cache-dir -r requirements.txt gunicorn eventlet
 
 # Make port 5000 available to the world outside this container
 EXPOSE 5000
@@ -16,5 +17,5 @@ EXPOSE 5000
 # Define environment variable
 ENV NAME EduChatbot
 
-# Run app.py when the container launches
-CMD ["python", "app.py"]
+# Run gunicorn with eventlet worker class for WebSocket support
+CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", "--bind", "0.0.0.0:5000", "app:app"]
