@@ -124,24 +124,20 @@ def handle_message(data):
 
         # Based on the response type, emit the appropriate content
         if response_type == "text":
-            print(f"Emitting message to frontend: type={response_type}, response={full_response_text}")
             socketio.emit('message', {"response": full_response_text, "type": "text"})
         elif response_type == "image":
-            print(f"Emitting message to frontend: type={response_type}, response={content_url}")
             socketio.emit('message', {"response": image_url, "type": "image"})
         elif response_type == "video":
             # Ensure the global video_url is used
+            global video_url
             if video_url is None:
                 app.logger.error("video_url is not defined")
                 socketio.emit('message', {"error": "Video URL is not defined"})
                 return
-            print(f"Emitting message to frontend: type={response_type}, response={video_url}")
             socketio.emit('message', {"response": video_url, "type": "video"})
         elif response_type == "audio":
-            print(f"Emitting message to frontend: type={response_type}, response={content_url}")
             socketio.emit('message', {"response": audio_url, "type": "audio"})
         elif response_type == "interactive":
-            print(f"Emitting message to frontend: type={response_type}, response={content_url}")
             socketio.emit('message', {"response": interactive_url, "type": "interactive"})
     except json.JSONDecodeError as e:
         app.logger.error(f"JSONDecodeError: {e}")
@@ -261,4 +257,4 @@ def serve_audio(filename):
     return send_from_directory('audio', filename)
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
+    socketio.run(app, host="0.0.0.0", port=5001, debug=True)
