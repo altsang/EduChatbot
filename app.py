@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_socketio import SocketIO
 import requests
@@ -18,7 +18,7 @@ socketio = SocketIO(app, cors_allowed_origins="*", cors_credentials=True, logger
 # URLs for educational content
 image_url = "https://scratch.mit.edu/projects/10128407/"  # An example Scratch project image
 video_url = "https://www.youtube.com/watch?v=_j4Lj-BT00g"  # A YouTube video explaining programming basics for kids
-audio_url = "/home/ubuntu/EduChatbot/placeholder_audio.mp3"  # Local placeholder audio file for chatbot audio response demonstration
+audio_url = "/audio/placeholder_audio.mp3"  # URL path for chatbot audio response demonstration
 interactive_url = "https://scratch.mit.edu/projects/10128407/"  # An example Scratch project for interactive coding
 
 @socketio.on('message')
@@ -255,6 +255,10 @@ def chatbot():
         app.logger.error(f"Error processing Ollama response: {e}")
         response = jsonify({"error": "The chatbot encountered an error processing your message. Please try again later."})
         return response, 500
+
+@app.route('/audio/<filename>')
+def serve_audio(filename):
+    return send_from_directory('audio', filename)
 
 if __name__ == "__main__":
     socketio.run(app, host="0.0.0.0", port=5000, debug=True)
