@@ -58,23 +58,23 @@ function App() {
     console.log('Rendering chat message:', chat); // Added console log to track rendering of chat messages
     switch (chat.type) {
       case 'text':
-        return <Text color={chat.sender === 'user' ? 'blue.500' : 'green.500'}>{chat.message}</Text>;
+        return <Text color={chat.sender === 'user' ? 'blue.500' : 'green.500'}>{chat.response}</Text>;
       case 'image':
-        return <Image src={chat.message} alt="Chatbot image" />;
+        return <Image src={chat.response} alt="Chatbot image" />;
       case 'code':
-        return <Code children={chat.message} />;
+        return <Code children={chat.response} />;
       case 'diagram':
         // Placeholder for diagram rendering
-        return <Image src={chat.message} alt="Chatbot diagram" />;
+        return <Image src={chat.response} alt="Chatbot diagram" />;
       case 'audio':
-        return <audio controls src={chat.message} />;
+        return <audio controls src={chat.response} />;
       case 'video':
         return <video controls width="250">
-                 <source src={chat.message} type="video/mp4" />
+                 <source src={chat.response} type="video/mp4" />
                  Your browser does not support the video tag.
                </video>;
       case 'interactive':
-        return <iframe src={chat.message} width="100%" height="500px" title="Interactive content"></iframe>;
+        return <iframe src={chat.response} width="100%" height="500px" title="Interactive content"></iframe>;
       // Add cases for other types as needed
       default:
         return <Text color="red.500">Unsupported content type</Text>;
