@@ -20,6 +20,7 @@ function App() {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
+    console.log('Initial chat history state:', chatHistory);
     // Connect to WebSocket server
     const newSocket = io(process.env.REACT_APP_BACKEND_URL);
     setSocket(newSocket);
@@ -50,7 +51,10 @@ function App() {
       console.log('WebSocket connected:', newSocket.connected);
     });
 
-    return () => newSocket.close();
+    return () => {
+      console.log('WebSocket disconnected');
+      newSocket.close();
+    };
   }, [setSocket]);
 
   const handleInputChange = (e) => setInputValue(e.target.value);
