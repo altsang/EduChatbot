@@ -55,15 +55,12 @@ function App() {
     if (socket) {
       const handleMessage = (message) => {
         console.log('Received message from WebSocket:', message);
+        console.log('Message content:', message.response, 'Message type:', message.type); // New log to confirm message content structure
         setChatHistory((prevChatHistory) => {
           const updatedChatHistory = [...prevChatHistory, message];
-          console.log('Updated chat history:', updatedChatHistory);
+          console.log('Updated chat history:', updatedChatHistory); // Log to confirm chat history update
           return updatedChatHistory;
         });
-        // Additional logging to confirm state update
-        console.log('State update for chatHistory should be triggered');
-        // New log to confirm message content structure
-        console.log('Message content:', message.response, 'Message type:', message.type);
       };
 
       socket.on('message', handleMessage);
