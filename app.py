@@ -72,6 +72,14 @@ def handle_connect():
 def handle_disconnect():
     app.logger.info(f"Client disconnected: {request.sid}")
 
+@socketio.on('ping')
+def handle_ping():
+    app.logger.info('Ping received from client')
+
+@socketio.on('pong')
+def handle_pong():
+    app.logger.info('Pong sent to client')
+
 # Log the response headers for debugging CORS issues
 @app.after_request
 def after_request_func(response):
