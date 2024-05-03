@@ -61,6 +61,9 @@ def handle_message(data):
     elif "play" in message.lower():
         response_type = "interactive"
         content_url = interactive_url
+    elif "example of a python program" in message.lower() or "show me python code" in message.lower():
+        response_type = "text"
+        content_url = "Here is a simple Python program: \n\n```python\nprint('Hello, World!')\n```"
 
     # Emit the response back to the client
     socketio.emit('response', {'response': content_url or message, 'type': response_type})
@@ -89,14 +92,14 @@ def handle_pong():
 def handle_pong():
     app.logger.info('Pong sent to client')
 
-# Log the response headers for debugging CORS issues
 @app.after_request
 def after_request_func(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,POST')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET,POST'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
     app.logger.info(f"Headers set: {response.headers}")
     return response
+
 @app.route("/chatbot", methods=["POST"])
 def chatbot():
     app.logger.info("POST /chatbot called")
