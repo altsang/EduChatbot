@@ -118,8 +118,11 @@ def chatbot():
     elif "play" in message.lower():
         response_type = "interactive"
 
+    app.logger.info(f"Determined response type: {response_type}")
+
     # Construct the prompt for the Ollama service
     prompt = f"{child_friendly} {message}"
+    app.logger.info(f"Constructed prompt for Ollama: {prompt}")
 
     # Make a POST request to the Ollama service
     try:
@@ -128,6 +131,7 @@ def chatbot():
             json={"model": "mistral:latest", "prompt": prompt},
             stream=True
         )
+        app.logger.info(f"Ollama response status code: {ollama_response.status_code}")
     except requests.exceptions.RequestException as e:
         app.logger.error(f"Request to Ollama service failed: {e}")
         return jsonify({"error": "Request to Ollama service failed"}), 500
@@ -141,15 +145,17 @@ def chatbot():
     try:
         # Read the response content and decode as JSON
         response_content = ollama_response.content.decode('utf-8')
+        app.logger.info(f"Ollama response content received: {response_content}")
+
         # Find the end of the first JSON object and slice the content
         end_of_first_json_object = response_content.find('}') + 1
         response_data = json.loads(response_content[:end_of_first_json_object])
-        app.logger.debug(f"Ollama response data: {response_data}")
+        app.logger.info(f"Ollama response data: {response_data}")
 
         # Extract the 'response' field from the JSON data
         if 'response' in response_data:
             response_text = response_data['response']
-            app.logger.debug(f"Ollama response text: {response_text}")
+            app.logger.info(f"Ollama response text: {response_text}")
 
             # Check if the response is complete
             if not response_data.get('done', False):
@@ -169,6 +175,7 @@ def chatbot():
                 response = jsonify({"response": audio_url, "type": "audio"})
             elif response_type == "interactive":
                 response = jsonify({"response": interactive_url, "type": "interactive"})
+            app.logger.info(f"Sending response: {response.get_json()}")
             return response
         else:
             app.logger.error("No 'response' field in Ollama response JSON")
