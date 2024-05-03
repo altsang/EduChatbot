@@ -15,9 +15,9 @@ def message(data):
 @sio.event
 def response(data):
     print(f"Received response: {data}")
-    # Wait for a bit before disconnecting to ensure all messages are received
-    time.sleep(10)
-    sio.disconnect()
+    # Wait indefinitely until a response is received
+    # time.sleep(10)
+    # sio.disconnect()
 
 @sio.event
 def disconnect():
@@ -25,3 +25,5 @@ def disconnect():
 
 if __name__ == "__main__":
     sio.connect("https://fceb70a59f1d.ngrok.app")
+    # Keep the client running to listen for the response
+    sio.wait()
