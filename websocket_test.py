@@ -24,6 +24,6 @@ def disconnect():
     print("Disconnected from the server.")
 
 if __name__ == "__main__":
-    sio.connect("https://fceb70a59f1d.ngrok.app")
+    sio.connect("https://deec51cc8b8f.ngrok.app")  # Updated to the correct ngrok URL for the backend service
     # Keep the client running to listen for the response
     sio.wait()
