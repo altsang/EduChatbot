@@ -11,6 +11,10 @@ def connect():
 @sio.event
 def message(data):
     print(f"Received message: {data}")
+
+@sio.event
+def response(data):
+    print(f"Received response: {data}")
     # Wait for a bit before disconnecting to ensure all messages are received
     time.sleep(5)
     sio.disconnect()
