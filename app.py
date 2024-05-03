@@ -31,8 +31,11 @@ def generate_audio_response(text_response):
     # Use espeak to generate the audio file from the text response
     subprocess.run(['espeak', text_response, '--stdout'], stdout=open(filepath, 'wb'))
 
-    # Return the relative path to the audio file
-    return f"/audio/{filename}"
+    # Construct the full URL path for the audio file using the ngrok URL
+    full_audio_url = f"https://ebd9a864ced1.ngrok.app/audio/{filename}"
+
+    # Return the full URL path to the audio file
+    return full_audio_url
 
 @socketio.on('message')
 def handle_message(data):
@@ -171,7 +174,7 @@ def chatbot():
         elif response_type == "video":
             response = jsonify({"response": video_url, "type": "video"})
         elif response_type == "audio":
-            # Generate the audio response and update the audio_url
+            # Generate the audio response and update the audio_url with the full URL path
             audio_url = generate_audio_response(response_text)
             response = jsonify({"response": audio_url, "type": "audio"})
         elif response_type == "interactive":
