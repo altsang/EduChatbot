@@ -30,6 +30,7 @@ function App() {
 
     newSocket.on('connect', () => {
       console.log('WebSocket connected:', newSocket.connected);
+      console.log('WebSocket connection status:', newSocket.connected); // Added console log for connection status
     });
 
     newSocket.on('connect_error', (error) => {
@@ -54,7 +55,13 @@ function App() {
     if (socket) {
       const handleMessage = (message) => {
         console.log('Received message from WebSocket:', message);
-        setChatHistory((prevChatHistory) => [...prevChatHistory, message]);
+        setChatHistory((prevChatHistory) => {
+          const updatedChatHistory = [...prevChatHistory, message];
+          console.log('Updated chat history:', updatedChatHistory);
+          return updatedChatHistory;
+        });
+        // Additional logging to confirm state update
+        console.log('State update for chatHistory should be triggered');
       };
 
       socket.on('message', handleMessage);
@@ -68,6 +75,7 @@ function App() {
   const handleInputChange = (e) => setInputValue(e.target.value);
 
   const handleSendClick = () => {
+    console.log('Attempting to send message:', inputValue); // Added console log for message sending attempt
     if (inputValue.trim() !== '') {
       // Send message to WebSocket server
       socket.emit('message', { message: inputValue });
