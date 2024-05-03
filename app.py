@@ -4,6 +4,8 @@ from flask_socketio import SocketIO
 import requests
 import logging
 import json
+import subprocess
+import uuid
 
 app = Flask(__name__)
 # Set CORS to allow requests from any origin
@@ -21,9 +23,25 @@ video_url = "https://www.youtube.com/watch?v=_j4Lj-BT00g"  # A YouTube video exp
 audio_url = "/audio/placeholder_audio.mp3"  # URL path for chatbot audio response demonstration
 interactive_url = "https://scratch.mit.edu/projects/10128407/"  # An example Scratch project for interactive coding
 
+def generate_audio_response(text_response):
+    # Generate a unique filename for the audio response
+    filename = f"{uuid.uuid4()}.mp3"
+    filepath = f"audio/{filename}"
+
+    # Use espeak to generate the audio file from the text response
+    subprocess.run(['espeak', text_response, '--stdout'], stdout=open(filepath, 'wb'))
+
+    # Return the relative path to the audio file
+    return f"/audio/{filename}"
+
 @socketio.on('message')
 def handle_message(data):
     global video_url, image_url, audio_url, interactive_url
+    # Ensure video_url is defined
+    if 'video_url' not in globals():
+        video_url = "https://www.youtube.com/watch?v=_j4Lj-BT00g"  # Default video URL
+
+    app.logger.info(f"Starting to handle message: {data}")
     app.logger.info(f"Received data: {data}")
 
     if not isinstance(data, dict):
@@ -59,6 +77,7 @@ def handle_message(data):
 
     # Construct the prompt for the Ollama service
     prompt = f"{child_friendly} {message}"
+    app.logger.info(f"Ollama service called with prompt: {prompt}")
 
     # Make a POST request to the Ollama service
     try:
@@ -83,7 +102,7 @@ def handle_message(data):
 
     # Process the successful response from Ollama
     # Log the status code and response from Ollama
-    app.logger.info(f"Ollama response status: {ollama_response.status_code}")
+    app.logger.info(f"Ollama response received with status code: {ollama_response.status_code}")
     app.logger.debug(f"Ollama response headers: {ollama_response.headers}")
 
     try:
@@ -123,6 +142,7 @@ def handle_message(data):
             return
 
         # Based on the response type, emit the appropriate content
+        app.logger.info(f"Emitting {response_type} response to client")
         if response_type == "text":
             app.logger.info(f"Attempting to emit text response to client")
             socketio.emit('message', {"response": full_response_text, "type": "text"})
@@ -132,8 +152,7 @@ def handle_message(data):
             socketio.emit('message', {"response": image_url, "type": "image"})
             app.logger.info(f"Emitted image response to client: {image_url}")
         elif response_type == "video":
-            # Ensure the global video_url is used
-            global video_url
+            # Removed the redundant global declaration
             if video_url is None:
                 app.logger.error("video_url is not defined")
                 socketio.emit('message', {"error": "Video URL is not defined"})
@@ -142,6 +161,8 @@ def handle_message(data):
             socketio.emit('message', {"response": video_url, "type": "video"})
             app.logger.info(f"Emitted video response to client: {video_url}")
         elif response_type == "audio":
+            # Generate the audio response and update the audio_url
+            audio_url = generate_audio_response(full_response_text)
             app.logger.info(f"Attempting to emit audio response to client")
             socketio.emit('message', {"response": audio_url, "type": "audio"})
             app.logger.info(f"Emitted audio response to client: {audio_url}")
@@ -249,6 +270,8 @@ def chatbot():
         elif response_type == "video":
             response = jsonify({"response": video_url, "type": "video"})
         elif response_type == "audio":
+            # Generate the audio response and update the audio_url
+            audio_url = generate_audio_response(full_response_text)
             response = jsonify({"response": audio_url, "type": "audio"})
         elif response_type == "interactive":
             response = jsonify({"response": interactive_url, "type": "interactive"})
@@ -264,7 +287,16 @@ def chatbot():
 
 @app.route('/audio/<filename>')
 def serve_audio(filename):
-    return send_from_directory('audio', filename)
+    app.logger.info(f"Serving audio file: {filename}")
+    try:
+        # Attempt to serve the file from the 'audio' directory
+        response = send_from_directory('audio', filename)
+        app.logger.info(f"Audio file served: {filename}")
+        return response
+    except FileNotFoundError:
+        # Log an error message if the file is not found
+        app.logger.error(f"Audio file not found: {filename}")
+        return jsonify({"error": "Audio file not found"}), 404
 
 if __name__ == "__main__":
     socketio.run(app, host="0.0.0.0", port=5001, debug=True)
