@@ -63,7 +63,7 @@ function App() {
         socket.off('message', handleMessage);
       };
     }
-  }, [socket, chatHistory]); // Include chatHistory in the dependency array
+  }, [socket]); // Removed chatHistory from the dependency array
 
   const handleInputChange = (e) => setInputValue(e.target.value);
 
