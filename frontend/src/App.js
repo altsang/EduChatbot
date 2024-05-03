@@ -37,6 +37,7 @@ function App() {
     // Listen for responses from the server
     newSocket.on('response', (response) => {
       console.log('Received response from WebSocket:', response);
+      // Log after updating chat history with the response
       setChatHistory((prevChatHistory) => {
         const updatedChatHistory = [...prevChatHistory, response];
         console.log('Updated chat history with response:', updatedChatHistory);
@@ -68,6 +69,8 @@ function App() {
 
   const renderChatMessage = (chat) => {
     console.log('Rendering chat message:', chat); // Added console log to track rendering of chat messages
+    // Additional log to confirm the type of message being rendered
+    console.log('Rendering message of type:', chat.type);
     switch (chat.type) {
       case 'text':
         return <Text color={chat.sender === 'user' ? 'blue.500' : 'green.500'}>{chat.response}</Text>;
