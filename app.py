@@ -132,56 +132,41 @@ def chatbot():
         return jsonify({"error": "Error from Ollama service"}), ollama_response.status_code
 
     # Process the successful response from Ollama
-    # Log the status code and response from Ollama
-    app.logger.info(f"Ollama response status: {ollama_response.status_code}")
-    app.logger.debug(f"Ollama response headers: {ollama_response.headers}")
-
     try:
-        # Read the response line by line and process each line as a separate JSON object
-        response_lines = ollama_response.iter_lines()
-        full_response_text = ""
-        done = False
-        for line in response_lines:
-            if line:  # filter out keep-alive new lines
-                # Decode each line as a separate JSON object
-                response_data = json.loads(line.decode('utf-8'))
-                app.logger.debug(f"Ollama response data: {response_data}")
+        # Read the response content and decode as JSON
+        response_content = ollama_response.content.decode('utf-8')
+        # Find the end of the first JSON object and slice the content
+        end_of_first_json_object = response_content.find('}') + 1
+        response_data = json.loads(response_content[:end_of_first_json_object])
+        app.logger.debug(f"Ollama response data: {response_data}")
 
-                # Extract the 'response' field from the JSON data
-                if 'response' in response_data:
-                    response_text = response_data['response']
-                    full_response_text += response_text
-                    app.logger.debug(f"Ollama response text: {response_text}")
+        # Extract the 'response' field from the JSON data
+        if 'response' in response_data:
+            response_text = response_data['response']
+            app.logger.debug(f"Ollama response text: {response_text}")
 
-                    # Check if the response is complete
-                    if response_data.get('done', False):
-                        done = True
-                        break
+            # Check if the response is complete
+            if not response_data.get('done', False):
+                app.logger.error("Ollama response not marked as done")
+                return jsonify({"error": "Incomplete response from Ollama"}), 500
 
-        # If no 'response' field is present in any line, log an error and return an error message
-        if not full_response_text:
-            app.logger.error("No 'response' field in any line of Ollama response")
+            # Based on the response type, return the appropriate content
+            if response_type == "text":
+                response = jsonify({"response": response_text, "type": "text"})
+            elif response_type == "image":
+                response = jsonify({"response": image_url, "type": "image"})
+            elif response_type == "video":
+                response = jsonify({"response": video_url, "type": "video"})
+            elif response_type == "audio":
+                # Generate the audio response and update the audio_url
+                audio_url = generate_audio_response(response_text)
+                response = jsonify({"response": audio_url, "type": "audio"})
+            elif response_type == "interactive":
+                response = jsonify({"response": interactive_url, "type": "interactive"})
+            return response
+        else:
+            app.logger.error("No 'response' field in Ollama response JSON")
             return jsonify({"error": "No 'response' field in Ollama response JSON"}), 500
-
-        # If the response is not marked as done, log an error and return an error message
-        if not done:
-            app.logger.error("Ollama response not marked as done")
-            return jsonify({"error": "Incomplete response from Ollama"}), 500
-
-        # Based on the response type, return the appropriate content
-        if response_type == "text":
-            response = jsonify({"response": full_response_text, "type": "text"})
-        elif response_type == "image":
-            response = jsonify({"response": image_url, "type": "image"})
-        elif response_type == "video":
-            response = jsonify({"response": video_url, "type": "video"})
-        elif response_type == "audio":
-            # Generate the audio response and update the audio_url
-            audio_url = generate_audio_response(full_response_text)
-            response = jsonify({"response": audio_url, "type": "audio"})
-        elif response_type == "interactive":
-            response = jsonify({"response": interactive_url, "type": "interactive"})
-        return response
     except json.JSONDecodeError as e:
         app.logger.error(f"JSONDecodeError: {e}")
         response = jsonify({"error": "JSON decode error in Ollama response"})
