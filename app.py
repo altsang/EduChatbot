@@ -8,14 +8,15 @@ import subprocess
 import uuid
 
 app = Flask(__name__)
-# Set CORS to allow requests from any origin
-cors = CORS(app, resources={r"/*": {"origins": "*"}})
-
-# Configure logging to display info messages and output them to a file
-logging.basicConfig(level=logging.INFO, handlers=[logging.FileHandler('app.log', 'a')])
 
 # Configure SocketIO with CORS headers explicitly set for all routes and custom ping settings
 socketio = SocketIO(app, cors_allowed_origins="*", cors_credentials=True, logger=True, engineio_logger=True, manage_session=False, ping_timeout=120, ping_interval=60)
+
+# Set CORS to allow requests from any origin
+cors = CORS(app, supports_credentials=True)
+
+# Configure logging to display info messages and output them to a file
+logging.basicConfig(level=logging.INFO, handlers=[logging.FileHandler('app.log', 'a')])
 
 # URLs for educational content
 image_url = "https://scratch.mit.edu/projects/10128407/"  # An example Scratch project image
@@ -111,6 +112,7 @@ def after_request_func(response):
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = 'GET,POST'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
     app.logger.info(f"Headers set: {response.headers}")
     return response
 
