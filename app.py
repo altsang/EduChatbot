@@ -15,7 +15,7 @@ cors = CORS(app, resources={r"/*": {"origins": "*"}})
 logging.basicConfig(level=logging.INFO, handlers=[logging.FileHandler('app.log', 'a')])
 
 # Configure SocketIO with CORS headers explicitly set for all routes and custom ping settings
-socketio = SocketIO(app, cors_allowed_origins="https://b57be32ed9be.ngrok.app", cors_credentials=True, logger=True, engineio_logger=True, manage_session=False, ping_timeout=120, ping_interval=60)
+socketio = SocketIO(app, cors_allowed_origins="*", cors_credentials=True, logger=True, engineio_logger=True, manage_session=False, ping_timeout=120, ping_interval=60)
 
 # URLs for educational content
 image_url = "https://scratch.mit.edu/projects/10128407/"  # An example Scratch project image
