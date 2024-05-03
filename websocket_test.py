@@ -22,7 +22,7 @@ def on_open(ws):
 
 if __name__ == "__main__":
     websocket.enableTrace(True)
-    ws = websocket.WebSocketApp("wss://bc70baea19ec.ngrok.app/socket.io/?EIO=4&transport=websocket",
+    ws = websocket.WebSocketApp("wss://d5b182dfa921.ngrok.app/socket.io/?EIO=4&transport=websocket",
                                 on_open=on_open,
                                 on_message=on_message,
                                 on_error=on_error,

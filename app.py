@@ -164,8 +164,6 @@ def chatbot():
             elif response_type == "image":
                 response = jsonify({"response": image_url, "type": "image"})
             elif response_type == "video":
-                # Ensure the global 'video_url' is used
-                global video_url
                 response = jsonify({"response": video_url, "type": "video"})
             elif response_type == "audio":
                 # Generate the audio response and update the audio_url
