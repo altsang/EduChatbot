@@ -64,6 +64,14 @@ def handle_message(data):
 
     # Rest of the function code remains unchanged...
 
+@socketio.on('connect')
+def handle_connect():
+    app.logger.info(f"Client connected: {request.sid}")
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    app.logger.info(f"Client disconnected: {request.sid}")
+
 # Log the response headers for debugging CORS issues
 @app.after_request
 def after_request_func(response):
@@ -72,7 +80,6 @@ def after_request_func(response):
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
     app.logger.info(f"Headers set: {response.headers}")
     return response
-
 @app.route("/chatbot", methods=["POST"])
 def chatbot():
     app.logger.info("POST /chatbot called")
@@ -80,6 +87,10 @@ def chatbot():
     message = json_content.get("message", "")
 
     app.logger.info(f"Received message: {message}")
+
+    # Ensure video_url is defined before using it
+    if 'video_url' not in globals():
+        video_url = "https://www.youtube.com/watch?v=_j4Lj-BT00g"  # A YouTube video explaining programming basics for kids
 
     # Determine the type of response needed based on the message
     response_type = "text"  # Default response type
