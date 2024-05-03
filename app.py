@@ -102,10 +102,6 @@ def chatbot():
 
     app.logger.info(f"Received message: {message}")
 
-    # Ensure video_url is defined before using it
-    if 'video_url' not in globals():
-        video_url = "https://www.youtube.com/watch?v=_j4Lj-BT00g"  # A YouTube video explaining programming basics for kids
-
     # Determine the type of response needed based on the message
     response_type = "text"  # Default response type
     child_friendly = "explain like I'm 10" if "for kids" in message.lower() else ""
