@@ -39,14 +39,14 @@ def generate_audio_response(text_response):
 
 @socketio.on('message')
 def handle_message(data):
-    app.logger.info(f"Received data: {data}")
+    print(f"Received data: {data}")  # Log the received data
 
     if not isinstance(data, dict):
-        app.logger.error("Received data is not a dictionary")
+        print("Received data is not a dictionary")  # Log if data is not a dictionary
         return
 
     message = data.get("message", "")
-    app.logger.info(f"Received message: {message}")
+    print(f"Received message: {message}")  # Log the received message
 
     # Determine the type of response needed based on the message
     response_type = "text"  # Default response type
@@ -68,8 +68,12 @@ def handle_message(data):
         response_type = "text"
         content_url = "Here is a simple Python program: \n\n```python\nprint('Hello, World!')\n```"
 
+    print(f"Determined response type: {response_type}")  # Log the determined response type
+    print(f"Content URL or message to send: {content_url or message}")  # Log the content URL or message to send
+
     # Emit the response back to the client
     socketio.emit('response', {'response': content_url or message, 'type': response_type})
+    print(f"Emitted response: {content_url or message}, Type: {response_type}")  # Log the emitted response
 
     # Rest of the function code remains unchanged...
 
