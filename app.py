@@ -9,7 +9,7 @@ import uuid
 app = Flask(__name__)
 
 # Configure SocketIO with CORS headers explicitly set for the frontend's ngrok URL and custom ping settings
-socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True, manage_session=False, ping_timeout=120, ping_interval=60)
+socketio = SocketIO(app, cors_allowed_origins=["https://520c517c7f33.ngrok.app"], logger=True, engineio_logger=True, manage_session=False, ping_timeout=120, ping_interval=60)
 
 # Configure logging to display info messages and output them to a file
 logging.basicConfig(level=logging.INFO, handlers=[logging.FileHandler('app.log', 'a')])
@@ -105,10 +105,10 @@ def handle_pong():
 
 @app.after_request
 def after_request_func(response):
-    app.logger.info(f"Headers set: {response.headers}")
-    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin') or '*'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PATCH, PUT, DELETE, OPTIONS'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
     return response
 
 @app.route("/chatbot", methods=["POST"])
