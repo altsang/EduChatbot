@@ -64,10 +64,10 @@ function App() {
         });
       };
 
-      socket.on('message', handleMessage);
+      socket.on('response', handleMessage);
 
       return () => {
-        socket.off('message', handleMessage);
+        socket.off('response', handleMessage);
       };
     }
   }, [socket]); // Removed chatHistory from the dependency array
