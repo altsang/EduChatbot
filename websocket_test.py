@@ -17,4 +17,4 @@ def disconnect():
     print("Disconnected from the server.")
 
 if __name__ == "__main__":
-    sio.connect("https://d5b182dfa921.ngrok.app")
+    sio.connect("https://fceb70a59f1d.ngrok.app")
