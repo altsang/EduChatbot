@@ -62,6 +62,8 @@ function App() {
         });
         // Additional logging to confirm state update
         console.log('State update for chatHistory should be triggered');
+        // New log to confirm message content structure
+        console.log('Message content:', message.response, 'Message type:', message.type);
       };
 
       socket.on('message', handleMessage);
