@@ -75,6 +75,12 @@ def handle_disconnect():
 @socketio.on('ping')
 def handle_ping():
     app.logger.info('Ping received from client')
+    # Respond with a pong to keep the connection alive
+    socketio.emit('pong')
+
+@socketio.on('pong')
+def handle_pong():
+    app.logger.info('Pong received from client')
 
 @socketio.on('pong')
 def handle_pong():
