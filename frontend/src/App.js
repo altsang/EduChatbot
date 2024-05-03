@@ -19,43 +19,51 @@ function App() {
   const [chatHistory, setChatHistory] = useState([]);
   const [socket, setSocket] = useState(null);
 
+  // New useEffect for WebSocket connection setup
   useEffect(() => {
-    console.log('Initial chat history state:', chatHistory);
-    // Connect to WebSocket server
-    const newSocket = io(process.env.REACT_APP_BACKEND_URL);
+    console.log('Setting up WebSocket connection');
+    const newSocket = io(process.env.REACT_APP_BACKEND_URL, {
+      reconnectionAttempts: 3,
+      reconnectionDelayMax: 10000,
+    });
     setSocket(newSocket);
 
-    // Listen for messages from the server
-    newSocket.on('message', (message) => {
-      console.log('Received message from WebSocket:', message);
-      setChatHistory((prevChatHistory) => {
-        const updatedChatHistory = [...prevChatHistory, message];
-        console.log('Updated chat history:', updatedChatHistory);
-        return updatedChatHistory;
-      });
-    });
-
-    // Listen for responses from the server
-    newSocket.on('response', (response) => {
-      console.log('Received response from WebSocket:', response);
-      // Log after updating chat history with the response
-      setChatHistory((prevChatHistory) => {
-        const updatedChatHistory = [...prevChatHistory, response];
-        console.log('Updated chat history with response:', updatedChatHistory);
-        return updatedChatHistory;
-      });
-    });
-
-    // Log the WebSocket connection status
     newSocket.on('connect', () => {
       console.log('WebSocket connected:', newSocket.connected);
     });
 
+    newSocket.on('connect_error', (error) => {
+      console.log('WebSocket connection error:', error);
+    });
+
+    newSocket.on('reconnect_attempt', () => {
+      console.log('WebSocket attempting to reconnect...');
+    });
+
     return () => {
-      console.log('WebSocket disconnected');
+      console.log('Cleaning up WebSocket connection');
+      newSocket.off('connect');
+      newSocket.off('connect_error');
+      newSocket.off('reconnect_attempt');
       newSocket.close();
     };
-  }, [setSocket]); // Removed chatHistory from the dependency array
+  }, []);
+
+  // useEffect for handling chatHistory updates
+  useEffect(() => {
+    if (socket) {
+      const handleMessage = (message) => {
+        console.log('Received message from WebSocket:', message);
+        setChatHistory((prevChatHistory) => [...prevChatHistory, message]);
+      };
+
+      socket.on('message', handleMessage);
+
+      return () => {
+        socket.off('message', handleMessage);
+      };
+    }
+  }, [socket, chatHistory]); // Include chatHistory in the dependency array
 
   const handleInputChange = (e) => setInputValue(e.target.value);
 

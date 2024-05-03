@@ -23,6 +23,10 @@ video_url = "https://www.youtube.com/watch?v=_j4Lj-BT00g"  # A YouTube video exp
 audio_url = "/audio/placeholder_audio.mp3"  # URL path for chatbot audio response demonstration
 interactive_url = "https://scratch.mit.edu/projects/10128407/"  # An example Scratch project for interactive coding
 
+import os
+import uuid
+import subprocess
+
 def generate_audio_response(text_response):
     # Generate a unique filename for the audio response
     filename = f"{uuid.uuid4()}.mp3"
@@ -31,8 +35,11 @@ def generate_audio_response(text_response):
     # Use espeak to generate the audio file from the text response
     subprocess.run(['espeak', text_response, '--stdout'], stdout=open(filepath, 'wb'))
 
-    # Construct the full URL path for the audio file using the ngrok URL
-    full_audio_url = f"https://ebd9a864ced1.ngrok.app/audio/{filename}"
+    # Retrieve the current ngrok URL from an environment variable
+    ngrok_url = os.getenv('NGROK_URL')
+
+    # Construct the full URL path for the audio file using the current ngrok URL
+    full_audio_url = f"{ngrok_url}/audio/{filename}"
 
     # Return the full URL path to the audio file
     return full_audio_url
@@ -206,6 +213,14 @@ def serve_audio(filename):
         # Log an error message if the file is not found
         app.logger.error(f"Audio file not found: {filename}")
         return jsonify({"error": "Audio file not found"}), 404
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_frontend(path):
+    if path != "" and os.path.exists("frontend/build/" + path):
+        return send_from_directory('frontend/build', path)
+    else:
+        return send_from_directory('frontend/build', 'index.html')
 
 if __name__ == "__main__":
     socketio.run(app, host="0.0.0.0", port=5001, debug=True)
