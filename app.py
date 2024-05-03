@@ -62,6 +62,9 @@ def handle_message(data):
         response_type = "interactive"
         content_url = interactive_url
 
+    # Emit the response back to the client
+    socketio.emit('response', {'response': content_url or message, 'type': response_type})
+
     # Rest of the function code remains unchanged...
 
 @socketio.on('connect')
