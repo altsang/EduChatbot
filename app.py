@@ -183,6 +183,10 @@ def chatbot():
         elif response_type == "image":
             response = jsonify({"response": image_url, "type": "image"})
         elif response_type == "video":
+            # Ensure the video_url is defined and use it to construct the response
+            if not video_url:
+                app.logger.error("video_url is not defined")
+                return jsonify({"error": "Video URL is not defined"}), 500
             response = jsonify({"response": video_url, "type": "video"})
         elif response_type == "audio":
             # Generate the audio response and update the audio_url with the full URL path
