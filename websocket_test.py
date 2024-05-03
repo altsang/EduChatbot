@@ -1,31 +1,20 @@
-import websocket
-import threading
-import ssl
-import json
+import socketio
 
-def on_message(ws, message):
-    print(f"Received message: {message}")
+sio = socketio.Client(logger=True, engineio_logger=True)
 
-def on_error(ws, error):
-    print(f"Error: {error}")
+@sio.event
+def connect():
+    print("Connected to the server.")
+    sio.emit('message', {'message': 'play with the code example'})
 
-def on_close(ws, close_status_code, close_msg):
-    print("### closed ###")
+@sio.event
+def message(data):
+    print(f"Received message: {data}")
+    sio.disconnect()
 
-def on_open(ws):
-    def run(*args):
-        # Send a message that prompts an interactive response from the chatbot
-        message_data = {"message": "play with the code example"}
-        ws.send(json.dumps(message_data))
-        # Stop the timer after sending the message
-        # threading.Timer(1, run).start()
+@sio.event
+def disconnect():
+    print("Disconnected from the server.")
 
 if __name__ == "__main__":
-    websocket.enableTrace(True)
-    ws = websocket.WebSocketApp("wss://d5b182dfa921.ngrok.app/socket.io/?EIO=4&transport=websocket",
-                                on_open=on_open,
-                                on_message=on_message,
-                                on_error=on_error,
-                                on_close=on_close)
-
-    ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
+    sio.connect("https://d5b182dfa921.ngrok.app")
