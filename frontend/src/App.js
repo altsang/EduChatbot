@@ -55,7 +55,7 @@ function App() {
       console.log('WebSocket disconnected');
       newSocket.close();
     };
-  }, [setSocket]);
+  }, [setSocket, chatHistory]); // Include chatHistory in the dependency array
 
   const handleInputChange = (e) => setInputValue(e.target.value);
 
