@@ -26,11 +26,20 @@ function App() {
 
     // Listen for messages from the server
     newSocket.on('message', (message) => {
-      console.log('Received message from WebSocket:', message); // Added console log to track incoming messages
+      console.log('Received message from WebSocket:', message);
       setChatHistory((prevChatHistory) => {
         const updatedChatHistory = [...prevChatHistory, message];
-        console.log('Updated chat history:', updatedChatHistory); // Added console log to track chat history updates
-        console.log('New chat history state:', updatedChatHistory);
+        console.log('Updated chat history:', updatedChatHistory);
+        return updatedChatHistory;
+      });
+    });
+
+    // Listen for responses from the server
+    newSocket.on('response', (response) => {
+      console.log('Received response from WebSocket:', response);
+      setChatHistory((prevChatHistory) => {
+        const updatedChatHistory = [...prevChatHistory, response];
+        console.log('Updated chat history with response:', updatedChatHistory);
         return updatedChatHistory;
       });
     });
