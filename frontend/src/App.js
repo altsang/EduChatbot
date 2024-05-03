@@ -30,6 +30,7 @@ function App() {
       setChatHistory((prevChatHistory) => {
         const updatedChatHistory = [...prevChatHistory, message];
         console.log('Updated chat history:', updatedChatHistory); // Added console log to track chat history updates
+        console.log('New chat history state:', updatedChatHistory);
         return updatedChatHistory;
       });
     });
@@ -48,6 +49,8 @@ function App() {
     if (inputValue.trim() !== '') {
       // Send message to WebSocket server
       socket.emit('message', { message: inputValue });
+
+      console.log('Message sent to WebSocket server:', inputValue);
 
       // Reset input field
       setInputValue('');
