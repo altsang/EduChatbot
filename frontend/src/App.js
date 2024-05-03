@@ -55,7 +55,7 @@ function App() {
       console.log('WebSocket disconnected');
       newSocket.close();
     };
-  }, [setSocket]); // Removed chatHistory from the dependency array
+  }, [setSocket, chatHistory]); // Added chatHistory to the dependency array
 
   const handleInputChange = (e) => setInputValue(e.target.value);
 
@@ -72,6 +72,10 @@ function App() {
   };
 
   const renderChatMessage = (chat) => {
+    // Check if the response is an audio URL
+    if (chat.response.startsWith("https://") && chat.response.endsWith(".mp3")) {
+      chat.type = 'audio'; // Set the type to 'audio'
+    }
     console.log('Rendering chat message:', chat); // Added console log to track rendering of chat messages
     // Additional log to confirm the type of message being rendered
     console.log('Rendering message of type:', chat.type);
