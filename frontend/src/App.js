@@ -64,6 +64,9 @@ function App() {
         console.log('State update for chatHistory should be triggered');
         // New log to confirm message content structure
         console.log('Message content:', message.response, 'Message type:', message.type);
+        // Log to confirm renderChatMessage is called with correct data
+        console.log('Calling renderChatMessage with:', message);
+        renderChatMessage(message); // This is just for debugging, not for actual rendering
       };
 
       socket.on('message', handleMessage);
