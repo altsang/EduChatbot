@@ -54,6 +54,7 @@ function App() {
   useEffect(() => {
     if (socket) {
       const handleMessage = (message) => {
+        console.log('handleMessage triggered with message:', message); // Added console log to confirm handleMessage trigger
         console.log('Received message from WebSocket:', message);
         console.log('Message content:', message.response, 'Message type:', message.type); // New log to confirm message content structure
         setChatHistory((prevChatHistory) => {
@@ -87,6 +88,7 @@ function App() {
   };
 
   const renderChatMessage = (chat) => {
+    console.log('renderChatMessage called with chat:', chat); // Added console log to confirm renderChatMessage call
     // Determine the type of the chat message for rendering
     let messageType = chat.type; // Assume the backend sends the type
     if (!messageType && chat.response.startsWith("https://")) {
