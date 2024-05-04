@@ -19,35 +19,69 @@ function App() {
   const [chatHistory, setChatHistory] = useState([]);
   const [socket, setSocket] = useState(null);
 
+  // New useEffect for WebSocket connection setup
   useEffect(() => {
-    // Connect to WebSocket server
-    const newSocket = io(process.env.REACT_APP_BACKEND_URL);
+    console.log('Setting up WebSocket connection');
+    const newSocket = io(process.env.REACT_APP_BACKEND_URL, {
+      reconnectionAttempts: 3,
+      reconnectionDelayMax: 10000,
+    });
     setSocket(newSocket);
 
-    // Listen for messages from the server
-    newSocket.on('message', (message) => {
-      console.log('Received message from WebSocket:', message); // Added console log to track incoming messages
-      setChatHistory((prevChatHistory) => {
-        const updatedChatHistory = [...prevChatHistory, message];
-        console.log('Updated chat history:', updatedChatHistory); // Added console log to track chat history updates
-        return updatedChatHistory;
-      });
-    });
-
-    // Log the WebSocket connection status
     newSocket.on('connect', () => {
       console.log('WebSocket connected:', newSocket.connected);
+      console.log('WebSocket connection status:', newSocket.connected); // Added console log for connection status
     });
 
-    return () => newSocket.close();
-  }, [setSocket]);
+    newSocket.on('connect_error', (error) => {
+      console.log('WebSocket connection error:', error);
+    });
+
+    newSocket.on('reconnect_attempt', () => {
+      console.log('WebSocket attempting to reconnect...');
+    });
+
+    return () => {
+      console.log('Cleaning up WebSocket connection');
+      newSocket.off('connect');
+      newSocket.off('connect_error');
+      newSocket.off('reconnect_attempt');
+      newSocket.close();
+    };
+  }, []);
+
+  // useEffect for handling chatHistory updates
+  useEffect(() => {
+    if (socket) {
+      const handleMessage = (message) => {
+        console.log('handleMessage triggered with message:', message); // Added console log to confirm handleMessage trigger
+        console.log('Received message from WebSocket:', message);
+        console.log('handleMessage: Received message structure:', Object.keys(message)); // New log to confirm message structure
+        console.log('Message content:', message.response, 'Message type:', message.type); // New log to confirm message content structure
+        setChatHistory((prevChatHistory) => {
+          const updatedChatHistory = [...prevChatHistory, message];
+          console.log('Updated chat history:', updatedChatHistory); // Log to confirm chat history update
+          return updatedChatHistory;
+        });
+      };
+
+      socket.on('response', handleMessage);
+
+      return () => {
+        socket.off('response', handleMessage);
+      };
+    }
+  }, [socket]); // Removed chatHistory from the dependency array
 
   const handleInputChange = (e) => setInputValue(e.target.value);
 
   const handleSendClick = () => {
+    console.log('Attempting to send message:', inputValue); // Added console log for message sending attempt
     if (inputValue.trim() !== '') {
       // Send message to WebSocket server
       socket.emit('message', { message: inputValue });
+
+      console.log('Message sent to WebSocket server:', inputValue);
 
       // Reset input field
       setInputValue('');
@@ -55,23 +89,30 @@ function App() {
   };
 
   const renderChatMessage = (chat) => {
-    console.log('Rendering chat message:', chat); // Added console log to track rendering of chat messages
-    switch (chat.type) {
+    console.log('renderChatMessage called with chat:', chat); // Added console log to confirm renderChatMessage call
+    // Determine the type of the chat message for rendering
+    let messageType = chat.type; // Assume the backend sends the type
+    if (!messageType && chat.response.startsWith("https://")) {
+      if (chat.response.endsWith(".mp3")) {
+        messageType = 'audio';
+      } else if (chat.response.endsWith(".png") || chat.response.endsWith(".jpg") || chat.response.endsWith(".gif")) {
+        messageType = 'image';
+      } // Add more conditions for other types if needed
+    }
+    console.log('renderChatMessage: Called with messageType:', messageType); // New log to confirm messageType determination
+    switch (messageType) {
       case 'text':
         return <Text color={chat.sender === 'user' ? 'blue.500' : 'green.500'}>{chat.response}</Text>;
       case 'image':
         return <Image src={chat.response} alt="Chatbot image" />;
+      case 'audio':
+        return <audio controls src={chat.response} />;
       case 'code':
         return <Code children={chat.response} />;
       case 'diagram':
-        // Placeholder for diagram rendering
         return <Image src={chat.response} alt="Chatbot diagram" />;
-      case 'audio':
-        return <audio controls src={chat.response} />;
       case 'video':
-        // Check if the video URL is from YouTube
         if (chat.response.includes("youtube.com")) {
-          // Extract the video ID from the URL
           const videoId = chat.response.split('v=')[1];
           const embedUrl = `https://www.youtube.com/embed/${videoId}`;
           return (

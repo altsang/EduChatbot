@@ -1,0 +1,1 @@
+A variable in programming is like a storage box where you can keep information for later use. You can put something in the box, like a number or a word, and then use it in your program whenever you need it.
