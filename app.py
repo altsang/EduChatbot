@@ -9,7 +9,7 @@ import uuid
 app = Flask(__name__)
 
 # Configure SocketIO with CORS headers explicitly set for the frontend's ngrok URL and custom ping settings
-socketio = SocketIO(app, cors_allowed_origins="https://1fa91f6ec2e3.ngrok.app", logger=True, engineio_logger=True, manage_session=False, ping_timeout=120, ping_interval=60)
+socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True, manage_session=False, ping_timeout=120, ping_interval=60)
 
 # Configure logging to display info messages and output them to a file
 logging.basicConfig(level=logging.INFO, handlers=[logging.FileHandler('app.log', 'a')])
