@@ -56,6 +56,7 @@ function App() {
       const handleMessage = (message) => {
         console.log('handleMessage triggered with message:', message); // Added console log to confirm handleMessage trigger
         console.log('Received message from WebSocket:', message);
+        console.log('handleMessage: Received message structure:', Object.keys(message)); // New log to confirm message structure
         console.log('Message content:', message.response, 'Message type:', message.type); // New log to confirm message content structure
         setChatHistory((prevChatHistory) => {
           const updatedChatHistory = [...prevChatHistory, message];
@@ -98,8 +99,7 @@ function App() {
         messageType = 'image';
       } // Add more conditions for other types if needed
     }
-    console.log('Rendering chat message:', chat);
-    console.log('Rendering message of type:', messageType);
+    console.log('renderChatMessage: Called with messageType:', messageType); // New log to confirm messageType determination
     switch (messageType) {
       case 'text':
         return <Text color={chat.sender === 'user' ? 'blue.500' : 'green.500'}>{chat.response}</Text>;

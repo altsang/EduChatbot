@@ -8,8 +8,8 @@ import uuid
 
 app = Flask(__name__)
 
-# Configure SocketIO with CORS headers explicitly set for the frontend's ngrok URL and custom ping settings
-socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True, manage_session=False, ping_timeout=120, ping_interval=60)
+# Configure SocketIO with CORS headers explicitly set for all origins
+socketio = SocketIO(app, cors_allowed_origins="*", cors_credentials=True, logger=True, engineio_logger=True, manage_session=False, ping_timeout=120, ping_interval=60)
 
 # Configure logging to display info messages and output them to a file
 logging.basicConfig(level=logging.INFO, handlers=[logging.FileHandler('app.log', 'a')])
@@ -43,14 +43,14 @@ def generate_audio_response(text_response):
 
 @socketio.on('message')
 def handle_message(data):
-    print(f"Received data: {data}")  # Log the received data
+    app.logger.info(f"Received data: {data}")  # Log the received data
 
     if not isinstance(data, dict):
-        print("Received data is not a dictionary")  # Log if data is not a dictionary
+        app.logger.info("Received data is not a dictionary")  # Log if data is not a dictionary
         return
 
     message = data.get("message", "")
-    print(f"Received message: {message}")  # Log the received message
+    app.logger.info(f"Received message: {message}")  # Log the received message
 
     # Determine the type of response needed based on the message
     response_type = "text"  # Default response type
@@ -72,12 +72,15 @@ def handle_message(data):
         response_type = "text"
         content_url = "Here is a simple Python program: \n\n```python\nprint('Hello, World!')\n```"
 
-    print(f"Determined response type: {response_type}")  # Log the determined response type
-    print(f"Content URL or message to send: {content_url or message}")  # Log the content URL or message to send
+    app.logger.info(f"Determined response type: {response_type}")  # Log the determined response type
+    app.logger.info(f"Content URL or message to send: {content_url or message}")  # Log the content URL or message to send
+
+    # Log the value of video_url before using it
+    app.logger.info(f"video_url value before emit: {video_url}")
 
     # Emit the response back to the client
     socketio.emit('response', {'response': content_url or message, 'type': response_type})
-    print(f"Emitted response: {content_url or message}, Type: {response_type}")  # Log the emitted response
+    app.logger.info(f"Emitted response: {content_url or message}, Type: {response_type}")  # Log the emitted response
 
     # Rest of the function code remains unchanged...
 
