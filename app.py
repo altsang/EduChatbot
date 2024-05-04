@@ -189,6 +189,10 @@ def chatbot():
         elif response_type == "image":
             response = jsonify({"response": image_url, "type": "image"})
         elif response_type == "video":
+            # Ensure video_url is defined before using it
+            if 'video_url' not in globals():
+                app.logger.error("video_url is not defined")
+                return jsonify({"error": "video_url is not defined"}), 500
             response = jsonify({"response": video_url, "type": "video"})
         elif response_type == "audio":
             # Generate the audio response and update the audio_url with the full URL path
